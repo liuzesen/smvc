@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+	<title>Test MVC</title>
+	<style>
+		.menu {
+			position: absolute;
+			width: 200px;
+			top: 0;
+			bottom: 0;
+			left: -200px;
+			background: #EEE;
+			transition: left .3s linear;
+		}
+		.menu.show {
+			left: 0;
+		}
+		.menu-switch {
+			position: absolute;
+			width: 20px;
+			height: 40px;
+			top: 40px;
+			right: -20px;
+			background: #424782;
+		}
+	</style>
+</head>
+<body>
+	<div id="jsTest" style="display: none;">
+		<div><span>姓名：</span><span n-bind="userinfo.name"></span><span>年龄：</span><span n-bind="userinfo.age"></span></div>
+		<h1 n-bind="title"></h1>
+
+		<h1 n-bind-once="title"></h1>
+
+		<input n-bind="username" type="radio" name="name" value="liu1">liu1
+		<input n-bind="username"  type="radio" name="name" value="liu2">liu2
+		<input n-bind="username"  type="radio" name="name" value="liu3">liu3
+		<p>我的姓名是: <span n-bind="username"></span></p>
+
+		<input n-bind="jobs" type="checkbox" name="jobs" value="teacher">老师<br>  
+		<input n-bind="jobs" type="checkbox" name="jobs" value="student">学生<br>  
+		<input n-bind="jobs" type="checkbox" name="jobs" value="programer">程序员<br>  
+
+		<select n-bind="secondJob" name="type" id="">
+			<option value="">请选择</option>
+			<option value="teacher">老师</option>
+			<option value="student">学生</option>
+			<option value="programer">程序员</option>
+		</select>
+		<p>你的第二职业是：<span n-bind="secondJob"></span></p>
+
+		<h2 n-bind="info.subTitle.title"></h2>
+		<ul n-repeat="items" n-template="user-tmpl"></ul>
+		<div n-delegate="jsClick,click,sayHello"><button class="jsClick">click me</button></div>
+		<button n-on="click,sayHello">点击我</button>
+		<div n-show="isShow" style="width: 100px; height: 100px; background: #DDD;"></div>
+		<span n-show="isShow">我是行内，也会消失</span>
+		<button n-on="click,showBlock">显示</button>
+
+		<input type="text" name="myname" n-bind="myname">
+		<p>我的名字是：<span n-bind="myname" n-filter="parseName"></span></p>
+	</div>
+
+	<div id="jsScroll" n-scroll="handleScroll" style="height: 300px; overflow: scroll;">
+		<ul n-repeat="items" n-template="user-tmpl" style="background: #EEE;"></ul>
+		<div n-show="loading" style="text-align: center;">加载中...</div>
+		<div n-hide="loading" style="text-align: center;">已经加载完成</div>
+		<div class="menu" n-class="isOpen:show light">
+			<div class="menu-switch" n-on="click,switchMenu"></div>
+		</div>
+	</div>
+
+</body>
+
+<script type="text/html" id="user-tmpl">
+<li><span>姓名：</span><span>{name}</span><span>年龄：</span><span>{age}</span></li>
+</script>
+
+<script type="text/javascript" src="js/ze.js"></script>
+<script type="text/javascript" src="js/ajax.js"></script>
+<script type="text/javascript">
+var isShow = true;
+var $userinfo = new Ze.VM({
+	view: 'jsTest',
+	methods: {
+		sayHello: function () {
+			alert('hello world');
+		},
+		showBlock: function () {
+			$userinfo.model.set('isShow', isShow = !isShow);
+		},
+		parseName: function(value) {
+			return '我是加工了的名字：' + value;
+		}
+	}
+});
+setTimeout(function() {
+	$userinfo.model.set({
+		userinfo: {
+			name: 'liuzesen',
+			age: 18
+		},
+		title: 'hello world',
+		username: 'liu1',
+		jobs: ['programer', 'student'],
+		secondJob: 'programer',
+		//info: {subTitle: {title: 'sub to you'} }
+		isShow: true,
+		items: [
+			{name: 'liuzesen', age: 1},
+			{name: 'zesonliu', age: 2}, 
+			{name: 'zesonliu', age: 3}, 
+			{name: 'zesonliu', age: 4},
+			{name: 'zesonliu', age: 5},
+			{name: 'zesonliu', age: 6},
+			{name: 'zesonliu', age: 7},
+			{name: 'zesonliu', age: 8}
+		]
+	});
+}, 1000);
+
+setTimeout(function () {
+	$userinfo.model.set('title', 'hello world11111111111111111');
+	$userinfo.model.splice('items', 2, 2, {name: 'liuzesen', age: 100});
+	$userinfo.model.splice('items', 0, 0, {name: 'liuzesen11111', age: 1001111});
+}, 2000);
+
+setTimeout(function () {
+	$userinfo.model.push('items', [{name: 'liuzesen1111', age: 100}, {name: 'liuzesen2222', age: 100}, {name: 'liuzesen3333', age: 100}]);
+}, 4000);
+
+/*setTimeout(function() {
+	$userinfo.model.set('info.subTitle', 'again sub to you');
+	$userinfo.model.push('items', [{name: 'zesonliu', age: 30}, {name: 'zesonliu', age: 30}]);
+}, 1000);*/
+/*var baseUrl = 'http://test.apps.gzh.qq.com/smvc/?r='
+ajax.get(baseUrl + 'test/test', function(data) {
+	console.log(data);
+});*/
+var $scroller = new Ze.VM({
+	view: 'jsScroll',
+	model: {
+		loading: true,
+		isOpen: false,
+		items: [
+			{name: 'liuzesen', age: 1},
+			{name: 'zesonliu', age: 2}, 
+			{name: 'zesonliu', age: 3}, 
+			{name: 'zesonliu', age: 4},
+			{name: 'zesonliu', age: 5},
+			{name: 'zesonliu', age: 6},
+			{name: 'zesonliu', age: 7}
+		]
+	},
+	methods: {
+		handleScroll: function (handle) {
+			var me = this;
+
+			handle.atBottom(10, function () {
+				me.model.set('loading', true);
+				handle.stopListen();
+
+				setTimeout(function () {
+					me.model.push('items', [{name: 'liuzesen1111', age: 100}, {name: 'liuzesen2222', age: 100}, {name: 'liuzesen3333', age: 100}]);
+					me.model.set('loading', false);
+					handle.beginListen();
+				}, 3000);
+			});
+		},
+		switchMenu: function () {
+			$scroller.model.set('isOpen', !$scroller.model.get('isOpen'));
+		}
+	}
+});
+</script>
+</html>
