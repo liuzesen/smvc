@@ -22,6 +22,7 @@
 	 */
 	var slice = Array.prototype.slice;
 	var hasOwn = Object.prototype.hasOwnProperty;
+	var defineProp = Object.defineProperty;
 
 	// 类型判断
 	var isFunc = Ze.isFunc = isType('Function');
@@ -49,10 +50,8 @@
 		}
 
 		for (var key in source) {
-			if (source.hasOwnProperty(key)) {
-				if (!origin.hasOwnProperty(key) || override) {
-					origin[key] = source[key];
-				}
+			if (!origin[key] || override) {
+				origin[key] = source[key];
 			}
 		}
 	};
@@ -134,7 +133,12 @@
 		return String(text).replace(/\{?\{([^{}]+)}}?/g, replace(context));
 	}
 
-	function replace (context, nil) {
+	/**
+	 * 替换方法
+	 * @param  {mixed} context 上下文
+	 * @return {null}         无
+	 */
+	function replace (context) {
 		return function (tag, name) {
 			if (tag.substring(0, 2) == '{{' && tag.substring(tag.length - 2) == '}}') {
 				return '{' + name + '}';
@@ -153,8 +157,13 @@
 	}
 	Ze.format = format;
 
-	 function htmlencode (encodeNewLine) {
-	    var s = this;
+	/**
+	 * html编码
+	 * @param  {string} s             要编码的字符串
+	 * @param  {boolean} encodeNewLine 是否需要编码换行符
+	 * @return {string}               编码后的字符串
+	 */
+	function htmlencode (s, encodeNewLine) {
 	    s = s.replace(/&/g, '&amp;')
 	    	.replace(/</g, '&lt;')
 	    	.replace(/>/g, '&gt;')
@@ -170,8 +179,13 @@
 	};
 	Ze.htmlencode = htmlencode;
 
-	function htmldecode (encodeNewLine) {
-	    var s = this;
+	/**
+	 * html解码
+	 * @param  {string} s             需要解码的字符串
+	 * @param  {boolean} encodeNewLine 是否需要解码换行
+	 * @return {string}               无
+	 */
+	function htmldecode (s, encodeNewLine) {
 	    s = s.replace(/&amp;/g, '&')
 	    	.replace(/&lt;/g, '<')
 	    	.replace(/&gt;/g, '>')
@@ -289,6 +303,12 @@
 		return new Dom(el);
 	};
 
+	/**
+	 * 设置/读取dom的属性
+	 * @param  {string} k key
+	 * @param  {string} v value
+	 * @return {mixed}   若v 为空则返回该属性的value，否则返回原型链对象
+	 */
 	Dom.prototype.attr = function (k, v) {
 		var el = this.el;
 		if (k && v) {
@@ -299,11 +319,20 @@
 		}
     };
 
+    /**
+     * 判断是否拥有某class
+     * @param  {string}  className class名称
+     * @return {Boolean}           是否拥有
+     */
     Dom.prototype.hasClass = function (className) {
 		var regex = new RegExp('(\\s|^)' + className + '(\\s|$)');
 		return this.el.className.match(regex);
     };
 
+    /**
+     * 添加类
+     * @param {string} className 类名
+     */
     Dom.prototype.addClass = function (className) {
 		if (!this.hasClass(className)) {
 			this.el.className += ' ' + className;
@@ -311,6 +340,11 @@
 		return this;
     };
 
+    /**
+     * 删除类
+     * @param  {string} className 类名
+     * @return {object}           原型链类
+     */
     Dom.prototype.removeClass = function (className) {
     	var el = this.el;
 		if (this.hasClass(className)) {
@@ -320,9 +354,14 @@
 		return this;
     };
 
+    /**
+     * 设置/获取样式
+     * @param  {object | string} cssObj 样式名值对或者字符串
+     * @return {string | object}        如果cssObj是字符串，返回的是样式值，如果是对象的话则是设置样式
+     */
     Dom.prototype.css = function (cssObj) {
     	var el = this.el;
-		if (typeof cssObj === 'object') {
+		if (isObj(cssObj)) {
 			for (var i in cssObj) {
 				el.style[i] = cssObj[i];
 			}
@@ -334,6 +373,11 @@
 		}
     };
 
+    /**
+     * 创建一个fragment dom对象，用于多个dom生成，减少使用多少createElement
+     * @param  {string} domStr dom字符串
+     * @return {dom}        dom对象
+     */
     function createFragment (domStr) {
     	var divTemp = document.createElement('div'),
     	nodes = null,
@@ -350,6 +394,14 @@
     }
     Dom.prototype.fragment = createFragment;
 
+    /**
+     * 往dom中添加dom
+     * @param  {string}	position	添加的位置,before是在dom的开始，after是在dom的结尾
+     * @param  {string} domStr		dom字符串	
+     * @return {string | object}   如果没有参数，则返回innerHTML,
+     * 如果是传入一个参数，则会被当作domStr处理，并简单使用innerHTML = domStr功能，
+     * 如果传入两个参数，则返回原型链对象
+     */
 	Dom.prototype.html = (function () {
 		var isIE69 = isIE(6, 9);
 		var notHasAjacentHTML = !('insertAdjacentHTML' in document.createElement('div'));
@@ -387,6 +439,7 @@
 					el.insertAdjacentHTML(position, domStr);
 				}
 
+				return me;
 			} else {
 				domStr = position;
 				if (domStr || domStr === '') {
@@ -396,8 +449,6 @@
 					return me.innerHTML;
 				}				
 			}
-
-			return me;
 		};
 	})();
 
@@ -417,6 +468,13 @@
 			obj['on' + eventName] = cbFn;
 		}
 	}
+
+	/**
+	 * 事件绑定
+	 * @param  {string}   eventName 事件名称
+	 * @param  {Function} cb        事件回调函数
+	 * @return {object}             原型链类
+	 */
 	Dom.prototype.on = function (eventName, cb) {
 		var me = this;
 		var el = me.el;
@@ -457,6 +515,11 @@
 		return me;
 	};
 
+	/**
+	 * 解除事件
+	 * @param  {string} event 事件名称
+	 * @return {object}       返回原型链类
+	 */
 	Dom.prototype.off = function (event) {
 		var me = this;
 		var el = me.el;
@@ -471,9 +534,16 @@
 			}
 		}
 		
-		return callback;
+		return me;
 	};
 
+	/**
+	 * 事件代理
+	 * @param  {Function}   selector 选择器方法，返回true则代表代理处理
+	 * @param  {string}   type     事件类型
+	 * @param  {Function} fn       回调函数
+	 * @return {object}            返回原型链类
+	 */
 	Dom.prototype.delegate = function (selector, type, fn) {
 		var me = this;
 
@@ -495,7 +565,7 @@
 	Ze.$ = $;
 
 	/**
-	 * 遍历非文字节点，使用深度搜索
+	 * 遍历非文字节点，使用广度搜索
 	 * @param  {element}   doms     非文字节点
 	 * @param  {Function} callback 回调函数
 	 * @return {null}            无
@@ -638,12 +708,16 @@
 			'delete': MEvent.mixin({}),
 			'splice': MEvent.mixin({})
 		};
+
+		if (defineProp) {
+			extend(data, this, true);
+			return data;
+		}
 	}
 	Model.prototype.get = function (key) {
 		var me = this;
 		return getData(me.data, key);
 	};
-	var i = 0;
 	Model.prototype.set = function (key, newValue) {
 		var me = this;
 
@@ -660,20 +734,65 @@
 			throw new Error('key must be a string or array');
 		}
 
-		for (var i = 0, len = keyArr.length; i < len; i++) {
-			var keyVal = keyArr[i];
-
+		keyArr.forEach(function (keyVal) {
 			var oldValue = getData(me.data, keyVal.key);
 			setData(me.data, keyVal.key, keyVal.val);
 
 			if (notSame(keyVal.val, oldValue)) {
 				me._bindCbs.set.trigger(keyVal.key, keyVal.val, oldValue);
 			}
-		}
+		});
 	};
+	function createGetterSetter (defaultValue, cb) {
+		var value = defaultValue;
+
+		return {
+			get: function () {
+				return value;
+			},
+			set: function (newValue) {
+				cb && cb(value, newValue);
+				value = newValue;
+			},
+			configurable: true,
+			enumerable: true	
+		};
+	}
+	function useDefineProperty (data, keys, prefix) {
+		var me = this;
+		prefix = prefix ? prefix : '';
+
+		if (isStr(keys)) {
+			keys = keys.split('.');
+		}
+
+		var temp = data;
+		for (var i = 0, len = keys.length; i < len; i++) {
+			if (!keys[i+1] || (keys[i+1] && !isObj(temp[keys[i]]))) {
+				(function (parentKey) {
+					var defaultVal = keys[i+1] ? {} : data[keys[i]];
+					defineProp(temp, keys[i], createGetterSetter(defaultVal, function (oldValue, newValue) {
+						if (notSame(newValue, oldValue)) {
+							if (isObj(newValue)) {
+								for (var key in newValue) {
+									var nextKey = prefix + parentKey + '.' + key;
+									useDefineProperty.call(me, newValue, key, prefix + parentKey + '.');
+									me._bindCbs.set.trigger(nextKey, newValue[key], oldValue && oldValue[key]);
+								}
+							}
+							me._bindCbs.set.trigger(prefix + parentKey, newValue, oldValue);
+						}
+					}));					
+				})(keys.slice(0, i+1).join('.'));
+			}
+
+			temp = temp[keys[i]];
+		}
+	}
 	Model.prototype.on = function (event, key, cb) {
 		var eventCbs = this._bindCbs[event];
 		eventCbs && eventCbs.on(key, cb);
+		event === 'set' && defineProp && useDefineProperty.call(this, this.data, key);
 	};
 	Model.prototype.off = function (event, key, cb) {
 		var eventCbs = this._bindCbs[event];
@@ -688,8 +807,12 @@
 			throw new Error(key + ' must be an array');
 		}
 
-		oldValue.push(newValue);
+		var newValue = isArr(newValue) ? newValue : slice.call(arguments, 1);
+		oldValue.push.apply(oldValue, newValue);
 		me._bindCbs.push.trigger(key, newValue);
+	};
+	Model.prototype.pop = function (key) {
+		this.splice(key, -1, 1);
 	};
 	Model.prototype.splice = function (key, index, len) {
 		var me = this;
@@ -700,6 +823,7 @@
 			throw new Error(key + ' must be an array');
 		}
 
+		index = index < 0 ? arr.length + index : index;
 		arr.splice(index, len);
 		me._bindCbs.splice.trigger(key, index, len, slice.call(arguments, 3));
 	};
@@ -807,12 +931,9 @@
 				return b.execObj.priority - a.execObj.priority;
 			});
 
-			for (var i = 0, len = priorityList.length; i < len; i++) {
-				var pri = priorityList[i];
-				var exec = pri.execObj;
-
-				exec.parse.call(me, pri.execValue, childNode, model, view, pri.execName);
-			}
+			priorityList.forEach(function (pri) {
+				pri.execObj.parse.call(me, pri.execValue, childNode, model, view, pri.execName);				
+			});
 		});
 
 		model.updateAll();
@@ -883,6 +1004,7 @@
 
 		} else {
 			var filterMethod = view._filter;
+			delete view._filter;
 			handler = function (newValue, oldValue) {
 				if (isFunc(filterMethod)) {
 					newValue = filterMethod(newValue);
@@ -1002,6 +1124,7 @@
 
 			} else {
 				var filterMethod = view._filter;
+				delete view._filter;
 				handler = function (newValue, oldValue) {
 					if (isFunc(filterMethod)) {
 						newValue = filterMethod(newValue);

@@ -1,0 +1,212 @@
+
+<!doctype html>
+<html lang="en" style="transform-origin: 0 0; -webkit-transform-origin: 0 0;">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<title></title>
+    <script type="text/javascript">
+    (function () {
+        var html = document.getElementsByTagName('html')[0];
+        
+        function checkDirect () {
+            var screenWidth = document.documentElement.clientWidth;
+            var screenHeight = document.documentElement.clientHeight;
+
+            var designWidth = 750;
+            html.style.width = designWidth + 'px';
+            var scale = screenWidth/designWidth;
+            html.style.transform = 'scale(' + scale + ')';
+            html.style['-webkit-transform'] = 'scale(' + scale + ')';
+
+            html.className = screenWidth > screenHeight ? 'landscape' : '';
+        }
+
+        checkDirect();
+        
+        var t = null;
+        window.addEventListener('onorientationchange' in window ? 'orientationchange' : 'resize', function() {
+            clearTimeout(t);
+            t = setTimeout(checkDirect, 300);
+        }, false);
+    })();
+    </script>
+    <style>
+    * {margin: 0; padding: 0;}
+    .list {
+        background: #eee;
+    }
+    .l-item {
+        display: flex;
+        background: #fff;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd; 
+    }
+    .l-item:last-child {
+        margin-bottom: 0;
+    }
+    .li-avator {
+        width: 120px;
+        height: 120px;
+        margin-right: 20px;
+    }
+    .li-avator img {
+        width: 100%;
+        border-radius: 50%;
+    }
+    .li-content {
+        flex: 1;
+    }
+    .lic-main {
+        color: #333;
+        font-size: 32px;
+    }
+    .lic-sub {
+        color: #999;
+        font-size: 28px;
+        line-height: 56px;
+    }
+    .li-stat {
+        text-align: right;
+        font-size: 24px;
+        line-height: 48px;
+        color: #999;
+    }
+
+    </style>
+</head>
+<body>
+    <div id="jsTitle">
+        <div n-bind="title"></div>
+        <div n-bind="info.name" n-filter="testVal"></div>
+        <div n-bind="info.age"></div>
+    </div>
+    <ul id="jsList" class="list" 
+        n-repeat="list" 
+        n-template="tmpl-list-item"
+        n-more="200,getMore">
+    </ul>
+</body>
+<script type="text/html" id="tmpl-list-item">
+<li class="l-item">
+    <div class="li-avator"><img src="{headimg}"></div>
+    <div class="li-content">
+        <p class="lic-main">{title}</p>
+        <p class="lic-sub">{desc}</p>
+        <div class="li-stat">
+            <span>赞(<span>{like}</span>)</span>
+            <span>回答数(<span>{replyCount}</span>)</span>
+            <span>{date}</span>
+        </div>
+    </div>
+</li>    
+</script>
+<script type="text/javascript" src="js/ze.js"></script>
+<script type="text/javascript">
+
+Ze.helper('beautyDate', function (date) {
+    var nowTime = Date.now();
+    var calTime = new Date(date).getTime();
+
+    var diff = (nowTime - calTime) / 1000;
+
+    if (diff < 60) {
+        return diff + '秒前';
+    }
+
+    diff = diff / 60;
+    if (diff < 60) {
+        return diff + '分钟前';
+    }
+
+    diff = diff / 60;
+    if (diff < 24) {
+        return diff + '小时前';
+    }
+
+    diff = diff / 24;
+    if (diff < 30) {
+        return diff + '天前';
+    }
+
+    diff = diff / 30;
+    if (diff < 12) {
+        return diff + '月前';
+    }
+
+    diff = diff / 12;
+    return diff + '年前';
+});
+
+var listVM = new Ze.VM({
+    view: 'jsList',
+    methods: {
+    }
+});
+setTimeout(function () {
+    listVM.model.list = [
+        {
+            headimg: 'img/avator.png',
+            title: '我是标题1', 
+            desc: '这个人很懒，没有留下任何说明！！',
+            like: 1000,
+            replyCount: 2000,
+            date: '2016-12-01 11:11:11'
+        }
+    ];
+}, 500);
+
+setTimeout(function () {
+    listVM.model.push('list', {
+        headimg: 'img/avator.png',
+        title: '我是标题2', 
+        desc: '这个人很懒，没有留下任何说明！！',
+        like: 1000,
+        replyCount: 2000,
+        date: '2016-12-01 11:11:11'
+     },
+     {
+         headimg: 'img/avator.png',
+         title: '我是标题3', 
+         desc: '这个人很懒，没有留下任何说明！！',
+         like: 1000,
+         replyCount: 2000,
+         date: '2016-12-01 11:11:11'
+      },
+     {
+         headimg: 'img/avator.png',
+         title: '我是标题4', 
+         desc: '这个人很懒，没有留下任何说明！！',
+         like: 1000,
+         replyCount: 2000,
+         date: '2016-12-01 11:11:11'
+      });
+}, 1000);
+
+setTimeout(function () {
+    listVM.model.pop('list');
+}, 1500);
+
+/*var vm = new Ze.VM({
+    view: 'jsTitle',
+    methods: {
+        testVal: function (value) {
+            return 'my name is ' + value;
+        }
+    }
+});
+setTimeout(function () {
+    vm.model.title = '123123123';
+    vm.model.info = {
+        name: 'liuzesen',
+        age: '18'
+    };
+}, 1000);
+
+setTimeout(function () {
+    vm.model.info.name = 'zeseonliu';
+    vm.model.set('info.age', 'adsfasdfasdf');
+}, 3000);*/
+</script>
+</html>
